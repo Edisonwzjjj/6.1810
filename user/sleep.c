@@ -9,7 +9,6 @@
 int
 main(int argc, char *argv[])
 {
-    int fd, i;
 
     if(argc != 2){
         fprintf(2, "Usage: sleep seconds\n");
