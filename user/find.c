@@ -54,16 +54,14 @@ void find(char *path, char *target) {
     close(fd);
 }
 
-int main(int argc, char ** argv) {
-    if (argc != 3) {
-        fprintf(2, "Usage: find dir file\n");
-        exit(1);
+int main(int argc, char *argv[])
+{
+    if(argc < 3){
+        exit(0);
     }
-
     char target[512];
-    target[0] = '/';
-    strcpy(target + 1, argv[2]);
+    target[0] = '/'; // 为查找的文件名添加 / 在开头
+    strcpy(target+1, argv[2]);
     find(argv[1], target);
-
     exit(0);
 }
