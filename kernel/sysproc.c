@@ -13,7 +13,7 @@ sys_exit(void)
   int n;
   argint(0, &n);
   exit(n);
-  return 0;  // not reached
+  return 0; // not reached
 }
 
 uint64
@@ -44,7 +44,7 @@ sys_sbrk(void)
 
   argint(0, &n);
   addr = myproc()->sz;
-  if(growproc(n) < 0)
+  if (growproc(n) < 0)
     return -1;
   return addr;
 }
@@ -56,12 +56,14 @@ sys_sleep(void)
   uint ticks0;
 
   argint(0, &n);
-  if(n < 0)
+  if (n < 0)
     n = 0;
   acquire(&tickslock);
   ticks0 = ticks;
-  while(ticks - ticks0 < n){
-    if(killed(myproc())){
+  while (ticks - ticks0 < n)
+  {
+    if (killed(myproc()))
+    {
       release(&tickslock);
       return -1;
     }
@@ -93,34 +95,24 @@ sys_uptime(void)
   return xticks;
 }
 
-
 uint64
-sys_trace(void)
-{
+sys_trace(void) {
   int mask;
-
-  if (argint(0, &mask) < 0) {
-    return -1;
-  }
+  argint(0, &mask);
   myproc()->syscall_trace = mask;
-    return 0;
+  return 0;
 }
 
-
 uint64
-sys_info() {
-    uint64 addr;
+sys_info(void)
+{
+  uint64 addr;
+  argaddr(0, &addr);
 
-    if (argaddr(0, &addr) < 0) {
-        return -1;
-    }
-
-    struct sysinfo sys;
-    sys.freemem = free_mem_count();
-    sys.n_proc = count_process();
-
-    if (copyout(myproc()->pagetable, addr, (char *)&sys, sizeof sys) < 0) {
-        return -1;
-    }
-    return 0;
+  struct sysinfo sinfo;
+  sinfo.freemem = freemem_size();
+  sinfo.nproc = count_proc();
+  if (copyout(myproc()->pagetable, addr, (char *)&sinfo, sizeof(sinfo)) < 0)
+    return -1;
+  return 0;
 }

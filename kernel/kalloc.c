@@ -81,18 +81,19 @@ kalloc(void)
   return (void*)r;
 }
 
-
 uint64
-free_mem_count(void) {
-    acquire(&kmem.lock);
-    uint64 bytes;
-    struct run * r = kmem.freelist;
-    while (r) {
-        bytes += PGSIZE;
-        r = r->next;
-    }
+freemem_size(void)
+{
+  acquire(&kmem.lock); // prevent race condition
 
-    release(&kmem.lock);
+  uint64 size = 0;
+  struct run *r = kmem.freelist;
+  while (r)
+  {
+    size++;
+    r = r->next;
+  }
 
-    return bytes;
+  release(&kmem.lock);
+  return size * PGSIZE;
 }

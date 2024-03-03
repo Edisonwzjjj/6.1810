@@ -124,7 +124,7 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
-
+  
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
     freeproc(p);
@@ -689,16 +689,16 @@ procdump(void)
   }
 }
 
-
 uint64
-count_process(void) {
-    uint64 cnt = 0;
-
-    for (struct proc * p = proc; p < &proc[NPROC]; ++p) {
-        if (p->state != USED) {
-            cnt++;
-        }
+count_proc(void)
+{
+  uint64 cnt = 0;
+  for (int i = 0; i < NPROC; i++)
+  {
+    if (proc[i].state != UNUSED)
+    {
+      cnt++;
     }
-
-    return cnt;
+  }
+  return cnt;
 }
