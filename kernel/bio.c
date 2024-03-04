@@ -12,7 +12,7 @@
 // * Do not use the buffer after calling brelse.
 // * Only one process at a time can use a buffer,
 //     so do not keep them longer than necessary.
-
+const int NBUCKET = 13;
 
 #include "types.h"
 #include "param.h"
@@ -61,13 +61,14 @@ bget(uint dev, uint blockno)
 {
   struct buf *b;
 
-  acquire(&bcache.lock);
+  uint hashcode = blockno % NBUCKET;
+  acquire(&bcache.hashlock[hashcode]);
 
   // Is the block already cached?
-  for(b = bcache.head.next; b != &bcache.head; b = b->next){
+  for(b = bcache.head[hashcode].next; b != &bcache.head[hashcode]; b = b->next){
     if(b->dev == dev && b->blockno == blockno){
       b->refcnt++;
-      release(&bcache.lock);
+      release(&bcache.hashlock[hashcode]);
       acquiresleep(&b->lock);
       return b;
     }
@@ -75,13 +76,13 @@ bget(uint dev, uint blockno)
 
   // Not cached.
   // Recycle the least recently used (LRU) unused buffer.
-  for(b = bcache.head.prev; b != &bcache.head; b = b->prev){
+  for(b = bcache.head[hashcode].prev; b != &bcache.head[hashcode]; b = b->prev){
     if(b->refcnt == 0) {
       b->dev = dev;
       b->blockno = blockno;
       b->valid = 0;
       b->refcnt = 1;
-      release(&bcache.lock);
+      release(&bcache.hashlock[hashcode]);
       acquiresleep(&b->lock);
       return b;
     }
@@ -122,21 +123,21 @@ brelse(struct buf *b)
 
   releasesleep(&b->lock);
 
-  acquire(&bcache.lock);
+  uint hashcode = b->blockno % NBUCKET;
+  acquire(&bcache.hashlock[hashcode]);
   b->refcnt--;
   if (b->refcnt == 0) {
     // no one is waiting for it.
     b->next->prev = b->prev;
     b->prev->next = b->next;
-    b->next = bcache.head.next;
-    b->prev = &bcache.head;
-    bcache.head.next->prev = b;
-    bcache.head.next = b;
+    b->next = bcache.head[hashcode].next;
+    b->prev = &bcache.head[hashcode];
+    bcache.head[hashcode].next->prev = b;
+    bcache.head[hashcode].next = b;
   }
-  
-  release(&bcache.lock);
-}
 
+  release(&bcache.hashlock[hashcode]);
+}
 void
 bpin(struct buf *b) {
   acquire(&bcache.lock);
